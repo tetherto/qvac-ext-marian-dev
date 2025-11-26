@@ -4,12 +4,22 @@ include_directories(.)
 include_directories(3rd_party)
 include_directories(3rd_party/SQLiteCpp/include)
 include_directories(3rd_party/sentencepiece)
-include_directories(3rd_party/sentencepiece/third_party/protobuf-lite)
+# Use external protobuf instead of builtin when SPM_PROTOBUF_PROVIDER=package
+if(NOT SPM_PROTOBUF_PROVIDER STREQUAL "package")
+  include_directories(3rd_party/sentencepiece/third_party/protobuf-lite)
+endif()
 include_directories(3rd_party/fbgemm/include)
 include_directories(3rd_party/intgemm)
 include_directories(3rd_party/ruy)
 include_directories(${CMAKE_CURRENT_BINARY_DIR}/3rd_party/intgemm)
 include_directories(${CMAKE_CURRENT_BINARY_DIR}/3rd_party)
+# Add sentencepiece build directory for external protobuf generated files
+include_directories(${CMAKE_CURRENT_BINARY_DIR}/3rd_party/sentencepiece/src)
+# Add external protobuf include directory when using package provider
+if(SPM_PROTOBUF_PROVIDER STREQUAL "package")
+  find_package(Protobuf REQUIRED)
+  include_directories(${Protobuf_INCLUDE_DIRS})
+endif()
 include_directories(${CMAKE_BINARY_DIR}/local/include)
 
 set(MARIAN_SOURCES
