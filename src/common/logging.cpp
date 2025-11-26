@@ -84,9 +84,18 @@ std::vector<Logger> createLoggers(const marian::Config* config) {
   }
 
   bool quiet = config && config->get<bool>("quiet");
-  Logger general{createStderrLogger("general", "[%Y-%m-%d %T] %v", generalLogs, quiet)};
+
+  // Check if loggers already exist to avoid conflicts when multiple backends are used
+  Logger general = spdlog::get("general");
+  if (!general) {
+    general = createStderrLogger("general", "[%Y-%m-%d %T] %v", generalLogs, quiet);
+  }
   loggers.push_back(general);
-  Logger valid{createStderrLogger("valid", "[%Y-%m-%d %T] [valid] %v", validLogs, quiet)};
+
+  Logger valid = spdlog::get("valid");
+  if (!valid) {
+    valid = createStderrLogger("valid", "[%Y-%m-%d %T] [valid] %v", validLogs, quiet);
+  }
   loggers.push_back(valid);
 
   if(config && config->has("log-level")) {
