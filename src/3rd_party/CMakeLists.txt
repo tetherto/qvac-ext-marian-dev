@@ -22,6 +22,20 @@ if(USE_RUY)
   set(CPUINFO_BUILD_PKG_CONFIG OFF CACHE BOOL " " FORCE)
   set(CPUINFO_BUILD_UNIT_TESTS OFF CACHE BOOL " " FORCE)
   set(CPUINFO_BUILD_TOOLS      OFF CACHE BOOL " " FORCE)
+
+  # Patch cpuinfo utils.h for Windows clang-cl compatibility
+  # Add missing <intrin.h> include for _BitScanReverse intrinsic
+  set(CPUINFO_UTILS_H "${CMAKE_CURRENT_SOURCE_DIR}/ruy/third_party/cpuinfo/src/cpuinfo/utils.h")
+  if(EXISTS "${CPUINFO_UTILS_H}")
+    file(READ "${CPUINFO_UTILS_H}" CPUINFO_UTILS_CONTENT)
+    string(FIND "${CPUINFO_UTILS_CONTENT}" "#ifdef _MSC_VER\n\t#include <intrin.h>\n#endif" PATCH_APPLIED)
+    if(PATCH_APPLIED EQUAL -1)
+      message(STATUS "Applying cpuinfo Windows compatibility patch")
+      string(REPLACE "#include <stdint.h>\n\n" "#include <stdint.h>\n\n#ifdef _MSC_VER\n\t#include <intrin.h>\n#endif\n\n" CPUINFO_UTILS_CONTENT "${CPUINFO_UTILS_CONTENT}")
+      file(WRITE "${CPUINFO_UTILS_H}" "${CPUINFO_UTILS_CONTENT}")
+    endif()
+  endif()
+
   add_subdirectory(ruy/third_party/cpuinfo EXCLUDE_FROM_ALL)
   add_subdirectory(ruy EXCLUDE_FROM_ALL)
 endif(USE_RUY)
