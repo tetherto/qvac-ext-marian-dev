@@ -66,6 +66,8 @@ CMAKE_DEPENDENT_OPTION(COMPILE_WITHOUT_EXCEPTIONS "Compile without exceptions" O
                        "USE_WASM_COMPATIBLE_SOURCE" OFF)
 
 if(${CMAKE_TARGET_ARCHITECTURE_CODE} MATCHES "arm")
+  # ARM architecture - intgemm is x86-only, so force it OFF
+  set(USE_INTGEMM OFF CACHE BOOL "Use INTGEMM" FORCE)
   option(USE_RUY "Use Ruy" ON)
 
   # Apple M1 has Apple Accelerate. Otherwise fallback to RUY
@@ -83,8 +85,8 @@ if(${CMAKE_TARGET_ARCHITECTURE_CODE} MATCHES "arm")
   # Define that we are using ARM
   add_compile_definitions(ARM)
   #
-else()
-  # x86/x64 architecture
+elseif(CMAKE_SYSTEM_PROCESSOR MATCHES "x86_64|amd64|AMD64|i686|i386")
+  # x86/x64 architecture - intgemm requires x86 SIMD instructions
   set(USE_INTGEMM ON CACHE BOOL "Use INTGEMM" FORCE)
 
   # Enable RUY as fallback BLAS implementation to ensure float32 matrix
@@ -92,6 +94,11 @@ else()
   # This is crucial for CI and end-user builds without system dependencies.
   option(USE_RUY "Use Ruy for quantized operations" ON)
   option(USE_RUY_SGEMM "Use Ruy for float32 matrix multiplication fallback" ON)
+else()
+  # Other architectures (e.g., RISC-V, MIPS) - intgemm is x86-only, use RUY instead
+  set(USE_INTGEMM OFF CACHE BOOL "Use INTGEMM" FORCE)
+  option(USE_RUY "Use Ruy" ON)
+  option(USE_RUY_SGEMM "Compile with Ruy SGEMM" ON)
 endif()
 
 if(USE_INTGEMM)
