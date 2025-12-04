@@ -84,7 +84,14 @@ if(${CMAKE_TARGET_ARCHITECTURE_CODE} MATCHES "arm")
   add_compile_definitions(ARM)
   #
 else()
+  # x86/x64 architecture
   set(USE_INTGEMM ON CACHE BOOL "Use INTGEMM" FORCE)
+
+  # Enable RUY as fallback BLAS implementation to ensure float32 matrix
+  # operations work even when system BLAS (OpenBLAS/MKL) is not available.
+  # This is crucial for CI and end-user builds without system dependencies.
+  option(USE_RUY "Use Ruy for quantized operations" ON)
+  option(USE_RUY_SGEMM "Use Ruy for float32 matrix multiplication fallback" ON)
 endif()
 
 if(USE_INTGEMM)
