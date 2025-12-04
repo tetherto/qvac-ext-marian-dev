@@ -84,7 +84,7 @@ if(${CMAKE_TARGET_ARCHITECTURE_CODE} MATCHES "arm")
   add_compile_definitions(ARM)
   #
 else()
-  set(USE_INTGEMM ON)
+  set(USE_INTGEMM ON CACHE BOOL "Use INTGEMM" FORCE)
 endif()
 
 if(USE_INTGEMM)
