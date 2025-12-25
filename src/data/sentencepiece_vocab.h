@@ -6,8 +6,14 @@
 
 #pragma warning(disable : 4100)
 
-#include "sentencepiece/src/sentencepiece_processor.h"
-#include "sentencepiece/src/sentencepiece_trainer.h"
+#ifdef USE_EXTERNAL_SENTENCEPIECE
+#  include <sentencepiece_processor.h>
+#  include <sentencepiece_trainer.h>
+#else
+#  include "sentencepiece/src/sentencepiece_processor.h"
+#  include "sentencepiece/src/sentencepiece_trainer.h"
+#endif
+
 
 /* https://github.com/google/googletest/issues/1063#issuecomment-332518392 */	
 #if __GNUC__ >= 5	
