@@ -3,18 +3,23 @@ add_subdirectory(3rd_party)
 include_directories(.)
 include_directories(3rd_party)
 include_directories(3rd_party/SQLiteCpp/include)
-include_directories(3rd_party/sentencepiece)
-# Use external protobuf instead of builtin when SPM_PROTOBUF_PROVIDER=package
-if(NOT SPM_PROTOBUF_PROVIDER STREQUAL "package")
-  include_directories(3rd_party/sentencepiece/third_party/protobuf-lite)
+# Use vendored sentencepiece includes only when not using external package
+if(NOT USE_EXTERNAL_SENTENCEPIECE)
+  include_directories(3rd_party/sentencepiece)
+  # Use external protobuf instead of builtin when SPM_PROTOBUF_PROVIDER=package
+  if(NOT SPM_PROTOBUF_PROVIDER STREQUAL "package")
+    include_directories(3rd_party/sentencepiece/third_party/protobuf-lite)
+  endif()
 endif()
 include_directories(3rd_party/fbgemm/include)
 include_directories(3rd_party/intgemm)
 include_directories(3rd_party/ruy)
 include_directories(${CMAKE_CURRENT_BINARY_DIR}/3rd_party/intgemm)
 include_directories(${CMAKE_CURRENT_BINARY_DIR}/3rd_party)
-# Add sentencepiece build directory for external protobuf generated files
-include_directories(${CMAKE_CURRENT_BINARY_DIR}/3rd_party/sentencepiece/src)
+# Add sentencepiece build directory for external protobuf generated files (vendored case only)
+if(NOT USE_EXTERNAL_SENTENCEPIECE)
+  include_directories(${CMAKE_CURRENT_BINARY_DIR}/3rd_party/sentencepiece/src)
+endif()
 # Add external protobuf include directory when using package provider
 if(SPM_PROTOBUF_PROVIDER STREQUAL "package")
   find_package(Protobuf REQUIRED)
@@ -144,6 +149,9 @@ endif()
 add_library(marian STATIC ${MARIAN_SOURCES})
 
 target_compile_options(marian PRIVATE ${ALL_WARNINGS})
+if(USE_EXTERNAL_SENTENCEPIECE)
+  target_compile_definitions(marian PUBLIC USE_EXTERNAL_SENTENCEPIECE)
+endif()
 
 # Generate git_revision.h to reflect current git revision information
 # [https://stackoverflow.com/questions/1435953/how-can-i-pass-git-sha1-to-compiler-as-definition-using-cmake]

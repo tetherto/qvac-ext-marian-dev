@@ -90,69 +90,74 @@ if(USE_FBGEMM)
 endif(USE_FBGEMM)
 
 if(USE_SENTENCEPIECE)
-  if(USE_STATIC_LIBS)
-    set(_ORIG_CMAKE_FIND_LIBRARY_SUFFIXES ${CMAKE_FIND_LIBRARY_SUFFIXES})
-    if(WIN32)
-      list(INSERT CMAKE_FIND_LIBRARY_SUFFIXES 0 .lib .a)
-    else()
-      set(CMAKE_FIND_LIBRARY_SUFFIXES .a)
-    endif()
-  endif()
-
-  # regardless of -DUSE_STATIC_LIBS setting always build sentencepiece statically
-  set(SPM_ENABLE_SHARED OFF CACHE BOOL  "Builds shared libaries in addition to static libraries." FORCE)
-  set(SPM_ENABLE_TCMALLOC ON CACHE BOOL "Enable TCMalloc if available.")
-
-  if(USE_STATIC_LIBS)
-    set(SPM_TCMALLOC_STATIC ON CACHE BOOL "Link static library of TCMALLOC." FORCE)
-  else(USE_STATIC_LIBS)
-    set(SPM_TCMALLOC_STATIC OFF CACHE BOOL "Link static library of TCMALLOC.")
-  endif(USE_STATIC_LIBS)
-
-  add_subdirectory(./sentencepiece)
-  include_directories(./sentencepiece)
-  if (NOT USE_WASM_COMPATIBLE_SOURCE)
-  set_target_properties(spm_encode spm_decode spm_train spm_normalize spm_export_vocab
-    PROPERTIES RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}")
-  endif()
-
-  list(APPEND SENTENCEPIECE_TARGETS sentencepiece-static sentencepiece_train-static)
-  if (NOT USE_WASM_COMPATIBLE_SOURCE)
-    list(APPEND SENTENCEPIECE_TARGETS spm_decode spm_encode spm_export_vocab spm_normalize spm_train)
-  endif()
-
-  if (CMAKE_CXX_COMPILER_ID MATCHES "GNU" AND (CMAKE_CXX_COMPILER_VERSION VERSION_EQUAL 8.0 OR CMAKE_CXX_COMPILER_VERSION VERSION_GREATER 8.0))
-    foreach(t IN LISTS SENTENCEPIECE_TARGETS)
-        set_property(TARGET ${t} APPEND_STRING PROPERTY COMPILE_FLAGS " -Wno-class-memaccess")
-    endforeach(t)
-  endif()
-
-  if (CMAKE_CXX_COMPILER_ID MATCHES "Clang")
-    foreach(t IN LISTS SENTENCEPIECE_TARGETS)
-      set_property(TARGET ${t} APPEND_STRING PROPERTY COMPILE_FLAGS " -Wno-tautological-compare -Wno-unused")
-      if (CMAKE_CXX_COMPILER_VERSION VERSION_GREATER 9.0)
-        set_property(TARGET ${t} APPEND_STRING PROPERTY COMPILE_FLAGS " -Wno-range-loop-construct")
-      endif()
-      # get_property(SENTENCEPIECE_COMPILE_FLAGS TARGET ${t} PROPERTY COMPILE_FLAGS)
-      # message("-- SENTENCPIECE: compile flags for target ${t}: ${SENTENCEPIECE_COMPILE_FLAGS}")
-    endforeach(t)
-  endif()
-
-  if(USE_STATIC_LIBS)
-    set(CMAKE_FIND_LIBRARY_SUFFIXES ${_ORIG_CMAKE_FIND_LIBRARY_SUFFIXES})
-  endif()
-
-  if(GENERATE_MARIAN_INSTALL_TARGETS)
+  # If external sentencepiece is available, skip building the vendored one.
+  if(USE_EXTERNAL_SENTENCEPIECE)
+    message(STATUS "Using external sentencepiece (skipping vendored subdirectory)")
+  else()
     if(USE_STATIC_LIBS)
-      install(TARGETS sentencepiece-static sentencepiece_train-static
-        EXPORT marian-targets
-        DESTINATION sentencepiece)
-    else()
-      install(TARGETS sentencepiece sentencepiece_train
-        EXPORT marian-targets
-        DESTINATION sentencepiece)
+      set(_ORIG_CMAKE_FIND_LIBRARY_SUFFIXES ${CMAKE_FIND_LIBRARY_SUFFIXES})
+      if(WIN32)
+        list(INSERT CMAKE_FIND_LIBRARY_SUFFIXES 0 .lib .a)
+      else()
+        set(CMAKE_FIND_LIBRARY_SUFFIXES .a)
+      endif()
     endif()
-  endif(GENERATE_MARIAN_INSTALL_TARGETS)
+
+    # regardless of -DUSE_STATIC_LIBS setting always build sentencepiece statically
+    set(SPM_ENABLE_SHARED OFF CACHE BOOL  "Builds shared libaries in addition to static libraries." FORCE)
+    set(SPM_ENABLE_TCMALLOC ON CACHE BOOL "Enable TCMalloc if available.")
+
+    if(USE_STATIC_LIBS)
+      set(SPM_TCMALLOC_STATIC ON CACHE BOOL "Link static library of TCMALLOC." FORCE)
+    else(USE_STATIC_LIBS)
+      set(SPM_TCMALLOC_STATIC OFF CACHE BOOL "Link static library of TCMALLOC.")
+    endif(USE_STATIC_LIBS)
+    
+    add_subdirectory(./sentencepiece)
+    include_directories(./sentencepiece)
+    if (NOT USE_WASM_COMPATIBLE_SOURCE)
+    set_target_properties(spm_encode spm_decode spm_train spm_normalize spm_export_vocab
+      PROPERTIES RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}")
+    endif()
+
+    list(APPEND SENTENCEPIECE_TARGETS sentencepiece-static sentencepiece_train-static)
+    if (NOT USE_WASM_COMPATIBLE_SOURCE)
+      list(APPEND SENTENCEPIECE_TARGETS spm_decode spm_encode spm_export_vocab spm_normalize spm_train)
+    endif()
+
+    if (CMAKE_CXX_COMPILER_ID MATCHES "GNU" AND (CMAKE_CXX_COMPILER_VERSION VERSION_EQUAL 8.0 OR CMAKE_CXX_COMPILER_VERSION VERSION_GREATER 8.0))
+      foreach(t IN LISTS SENTENCEPIECE_TARGETS)
+          set_property(TARGET ${t} APPEND_STRING PROPERTY COMPILE_FLAGS " -Wno-class-memaccess")
+      endforeach(t)
+    endif()
+
+    if (CMAKE_CXX_COMPILER_ID MATCHES "Clang")
+      foreach(t IN LISTS SENTENCEPIECE_TARGETS)
+        set_property(TARGET ${t} APPEND_STRING PROPERTY COMPILE_FLAGS " -Wno-tautological-compare -Wno-unused")
+        if (CMAKE_CXX_COMPILER_VERSION VERSION_GREATER 9.0)
+          set_property(TARGET ${t} APPEND_STRING PROPERTY COMPILE_FLAGS " -Wno-range-loop-construct")
+        endif()
+        # get_property(SENTENCEPIECE_COMPILE_FLAGS TARGET ${t} PROPERTY COMPILE_FLAGS)
+        # message("-- SENTENCPIECE: compile flags for target ${t}: ${SENTENCEPIECE_COMPILE_FLAGS}")
+      endforeach(t)
+    endif()
+
+    if(USE_STATIC_LIBS)
+      set(CMAKE_FIND_LIBRARY_SUFFIXES ${_ORIG_CMAKE_FIND_LIBRARY_SUFFIXES})
+    endif()
+
+    if(GENERATE_MARIAN_INSTALL_TARGETS)
+      if(USE_STATIC_LIBS)
+        install(TARGETS sentencepiece-static sentencepiece_train-static
+          EXPORT marian-targets
+          DESTINATION sentencepiece)
+      else()
+        install(TARGETS sentencepiece sentencepiece_train
+          EXPORT marian-targets
+          DESTINATION sentencepiece)
+      endif()
+    endif(GENERATE_MARIAN_INSTALL_TARGETS)
+  endif()
 endif(USE_SENTENCEPIECE)
 
 include_directories(./CLI)

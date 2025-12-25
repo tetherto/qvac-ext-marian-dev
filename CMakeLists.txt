@@ -411,9 +411,18 @@ endif()
 # Downloading SentencePiece if requested and set to compile with it.
 # Requires all the dependencies imposed by SentencePiece
 if(USE_SENTENCEPIECE)
-  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DUSE_SENTENCEPIECE -D_USE_INTERNAL_STRING_VIEW")
+  # Prefer external sentencepiece (e.g., provided by vcpkg) if available.
+  # If found, set a cache var so subdirectories can detect it.
+  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DUSE_SENTENCEPIECE")
   LIST(APPEND CUDA_NVCC_FLAGS -DUSE_SENTENCEPIECE; )
-  set(EXT_LIBS ${EXT_LIBS} sentencepiece sentencepiece_train)
+  if(SENTENCEPIECE_TARGET)
+    set(EXT_LIBS ${EXT_LIBS} ${SENTENCEPIECE_TARGET})
+    set(USE_EXTERNAL_SENTENCEPIECE ON CACHE BOOL "Use external sentencepiece via find_package" FORCE)
+  else()
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -D_USE_INTERNAL_STRING_VIEW")
+    set(EXT_LIBS ${EXT_LIBS} sentencepiece sentencepiece_train)
+    MESSAGE(WARNING "Using internal sentencepiece")
+  endif()
 endif()
 
 if(USE_ONNX)
