@@ -657,7 +657,16 @@ if(COMPILE_CPU)
   endif(USE_INTGEMM)
 
   if(USE_RUY OR USE_RUY_SGEMM)
-    set(EXT_LIBS ${EXT_LIBS} ruy) 
+    find_package(cpuinfo REQUIRED CONFIG)
+    if(TARGET cpuinfo::cpuinfo AND NOT TARGET cpuinfo)
+      add_library(cpuinfo INTERFACE IMPORTED)
+      target_link_libraries(cpuinfo INTERFACE cpuinfo::cpuinfo)
+    endif()
+    find_package(ruy REQUIRED CONFIG)
+
+    set(EXT_LIBS ${EXT_LIBS} ruy::ruy) 
+    set(EXT_LIBS ${EXT_LIBS} cpuinfo) 
+    
   endif(USE_RUY OR USE_RUY_SGEMM)
 
   add_definitions(-DCOMPILE_CPU=1)        # Move the compile CPU definition on top since we want to compile intgemm when we set compile CPU

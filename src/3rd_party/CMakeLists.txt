@@ -35,9 +35,6 @@ if(USE_RUY)
       file(WRITE "${CPUINFO_UTILS_H}" "${CPUINFO_UTILS_CONTENT}")
     endif()
   endif()
-
-  add_subdirectory(ruy/third_party/cpuinfo EXCLUDE_FROM_ALL)
-  add_subdirectory(ruy EXCLUDE_FROM_ALL)
 endif(USE_RUY)
 
 if(USE_ONNX_SGEMM)
