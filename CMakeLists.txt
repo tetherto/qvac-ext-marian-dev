@@ -653,7 +653,7 @@ endif(USE_MPI)
 # Find BLAS library for CPU compilation
 if(COMPILE_CPU)
   if(USE_INTGEMM)
-      set(EXT_LIBS ${EXT_LIBS} intgemm)       # Move the intgemm bits on top since they compile with every single variant
+      set(EXT_LIBS ${EXT_LIBS} intgemm::intgemm)       # Move the intgemm bits on top since they compile with every single variant
   endif(USE_INTGEMM)
 
   if(USE_RUY OR USE_RUY_SGEMM)

@@ -13,7 +13,7 @@ add_subdirectory(./pathie-cpp)
 
 if(USE_INTGEMM)
   set(INTGEMM_DONT_BUILD_TESTS ON CACHE BOOL "Disable intgemm tests")
-  add_subdirectory(./intgemm)
+  find_package(intgemm REQUIRED CONFIG)
 endif(USE_INTGEMM)
 
 if(USE_RUY)
