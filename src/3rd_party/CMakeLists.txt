@@ -37,7 +37,8 @@ if(USE_RUY)
 endif(USE_RUY)
 
 if(USE_ONNX_SGEMM)
-  add_subdirectory(./onnxjs)
+    # Commenting out instead of changing it to find_package because we are not doing WASM builds.
+    # add_subdirectory(./onnxjs)
 endif(USE_ONNX_SGEMM)
 
 if(USE_FBGEMM)
