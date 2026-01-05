@@ -106,6 +106,8 @@ if(USE_INTGEMM)
 endif(USE_INTGEMM)
 
 if(USE_SIMD_UTILS)
+  find_package(simd_utils CONFIG REQUIRED)
+  set(EXT_LIBS ${EXT_LIBS} simd_utils::simid_utils)
   if(${CMAKE_TARGET_ARCHITECTURE_CODE} MATCHES "arm")
     add_compile_definitions(ARM FMA SSE) #added for ARM
   endif()
