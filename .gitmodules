@@ -1,4 +1,0 @@
-[submodule "src/3rd_party/sentencepiece"]
-	path = src/3rd_party/sentencepiece
-	url = https://github.com/google/sentencepiece
-	branch = v0.2.0
