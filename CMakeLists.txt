@@ -189,8 +189,31 @@ if(GENERATE_MARIAN_INSTALL_TARGETS)
   include(InstallRequiredSystemLibraries) # Tell CMake that the `install` target needs to install required system libraries (eg: Windows SDK)
   include(CMakePackageConfigHelpers)      # Helper to create relocatable packages
 
-  install(EXPORT marian-targets           # Installation target
-    DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake)
+  set(INSTALL_CONFIGDIR "${CMAKE_INSTALL_LIBDIR}/cmake/marian")
+
+  install(EXPORT marian-targets   
+    NAMESPACE marian::        # Installation target
+    DESTINATION ${INSTALL_CONFIGDIR})
+
+  write_basic_package_version_file(
+    "${CMAKE_CURRENT_BINARY_DIR}/marianConfigVersion.cmake"
+    VERSION "${PROJECT_VERSION}"
+    COMPATIBILITY SameMajorVersion
+  )
+
+  # Generate marianConfig.cmake from a template
+  configure_package_config_file(
+    "${CMAKE_CURRENT_SOURCE_DIR}/cmake/marianConfig.cmake.in"
+    "${CMAKE_CURRENT_BINARY_DIR}/marianConfig.cmake"
+    INSTALL_DESTINATION "${INSTALL_CONFIGDIR}"
+  )
+
+  # Install the config files
+  install(FILES
+    "${CMAKE_CURRENT_BINARY_DIR}/marianConfig.cmake"
+    "${CMAKE_CURRENT_BINARY_DIR}/marianConfigVersion.cmake"
+    DESTINATION "${INSTALL_CONFIGDIR}"
+  )
 endif(GENERATE_MARIAN_INSTALL_TARGETS)
 
 # use ccache (https://ccache.dev) for faster compilation if requested and available
