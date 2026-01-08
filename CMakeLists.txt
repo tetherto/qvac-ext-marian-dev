@@ -10,7 +10,7 @@ if (POLICY CMP0077)
   cmake_policy(SET CMP0077 NEW)
 endif()
 
-project(marian CXX C)
+project(marian LANGUAGES CXX C VERSION 1.0.0)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
@@ -109,7 +109,9 @@ if(USE_SIMD_UTILS)
   find_package(simd_utils CONFIG REQUIRED)
   set(EXT_LIBS ${EXT_LIBS} simd_utils::simid_utils)
   if(${CMAKE_TARGET_ARCHITECTURE_CODE} MATCHES "arm")
-    add_compile_definitions(ARM FMA SSE) #added for ARM
+    add_library(marian_arch_defs INTERFACE)
+    target_compile_definitions(marian_arch_defs INTERFACE ARM FMA SSE) # added for ARM
+    set(EXT_LIBS ${EXT_LIBS} marian_arch_defs)
   endif()
   if(MSVC)
     add_compile_options(/flax-vector-conversions)
@@ -214,6 +216,62 @@ if(GENERATE_MARIAN_INSTALL_TARGETS)
     "${CMAKE_CURRENT_BINARY_DIR}/marianConfigVersion.cmake"
     DESTINATION "${INSTALL_CONFIGDIR}"
   )
+
+  install(FILES
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/marian.h"
+    DESTINATION "${CMAKE_INSTALL_INCLUDEDIR}"
+  )
+
+  # Ensure INTERFACE arch definitions library is part of the export set when present
+  if(TARGET marian_arch_defs)
+    install(TARGETS marian_arch_defs
+      EXPORT marian-targets
+    )
+  endif()
+
+  install(DIRECTORY
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/3rd_party/CLI/"
+    DESTINATION "${CMAKE_INSTALL_INCLUDEDIR}/CLI"
+    FILES_MATCHING
+      PATTERN "*.h"
+      PATTERN "*.hpp"
+  )
+
+  install(DIRECTORY
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/3rd_party/spdlog/"
+    DESTINATION "${CMAKE_INSTALL_INCLUDEDIR}/spdlog"
+    FILES_MATCHING
+      PATTERN "*.h"
+      PATTERN "*.hpp"
+      PATTERN "*.cc"
+      PATTERN "*.tcc"
+  )
+
+  install(DIRECTORY
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/3rd_party/yaml-cpp/"
+    DESTINATION "${CMAKE_INSTALL_INCLUDEDIR}/yaml-cpp"
+    FILES_MATCHING
+      PATTERN "*.h"
+      PATTERN "*.hpp"
+  )
+  
+  # Install vendored half_float headers at include/half_float so includes like "half_float/umHalf.h" work
+  install(DIRECTORY
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/3rd_party/half_float/"
+    DESTINATION "${CMAKE_INSTALL_INCLUDEDIR}/half_float"
+    FILES_MATCHING
+      PATTERN "*.h"
+      PATTERN "*.hpp"
+      PATTERN "*.inl"
+  )
+  
+  install(DIRECTORY
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/"
+    DESTINATION "${CMAKE_INSTALL_INCLUDEDIR}"
+    FILES_MATCHING
+      PATTERN "*.h"
+      PATTERN "*.hpp"
+  )
 endif(GENERATE_MARIAN_INSTALL_TARGETS)
 
 # use ccache (https://ccache.dev) for faster compilation if requested and available
@@ -303,8 +361,8 @@ else(MSVC)
     include(FindSSE)
     if(SSE2_FOUND)
       message(STATUS "SSE2 support found")
-      set(INTRINSICS "${INTRINSICS} -msse2")
-      list(APPEND INTRINSICS_NVCC -Xcompiler\ -msse2)
+      set(INTRINSICS "${INTRINSICS} ")
+      list(APPEND INTRINSICS_NVCC -Xcompiler\ )
     endif(SSE2_FOUND)
     if(SSE3_FOUND)
       message(STATUS "SSE3 support found")
@@ -440,8 +498,75 @@ if(USE_SENTENCEPIECE)
   # If found, set a cache var so subdirectories can detect it.
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DUSE_SENTENCEPIECE")
   LIST(APPEND CUDA_NVCC_FLAGS -DUSE_SENTENCEPIECE; )
+
+  find_package(PkgConfig QUIET)
+
+  find_package(sentencepiece CONFIG QUIET)
+  if(sentencepiece_FOUND)
+    set(SENTENCEPIECE_TARGET sentencepiece::sentencepiece)
+  elseif(NOT WIN32)
+    find_package(PkgConfig REQUIRED)
+    pkg_check_modules(sentencepiece REQUIRED IMPORTED_TARGET sentencepiece)
+    set(SENTENCEPIECE_TARGET PkgConfig::sentencepiece)
+  else()
+    find_path(SENTENCEPIECE_INCLUDE_DIR
+      NAMES sentencepiece_processor.h
+      PATHS ${CMAKE_PREFIX_PATH}
+      PATH_SUFFIXES include
+    )
+  
+    find_library(SENTENCEPIECE_LIBRARY
+      NAMES sentencepiece
+      PATHS ${CMAKE_PREFIX_PATH}
+      PATH_SUFFIXES lib
+    )
+  
+    find_library(SENTENCEPIECE_TRAIN_LIBRARY
+	NAMES sentencepiece_train
+    	PATHS ${CMAKE_PREFIX_PATH}
+    	PATH_SUFFIXES lib
+    )
+    if(SENTENCEPIECE_INCLUDE_DIR AND SENTENCEPIECE_LIBRARY)
+      add_library(sentencepiece::sentencepiece UNKNOWN IMPORTED)
+      set_target_properties(sentencepiece::sentencepiece PROPERTIES
+        IMPORTED_LOCATION "${SENTENCEPIECE_LIBRARY}"
+        INTERFACE_INCLUDE_DIRECTORIES "${SENTENCEPIECE_INCLUDE_DIR}"
+      )
+
+      if(SENTENCEPIECE_TRAIN_LIBRARY)
+        set_property(TARGET sentencepiece::sentencepiece APPEND PROPERTY
+	INTERFACE_LINK_LIBRARIES "${SENTENCEPIECE_TRAIN_LIBRARY}"
+      )
+      endif(SENTENCEPIECE_TRAIN_LIBRARY)
+
+      set(SENTENCEPIECE_TARGET sentencepiece::sentencepiece)
+      set(SENTENCEPIECE_INCLUDE_DIRS "${SENTENCEPIECE_INCLUDE_DIR}")
+    else()
+      if(PkgConfig_FOUND)
+        pkg_check_modules(sentencepiece QUIET IMPORTED_TARGET sentencepiece)
+        if(sentencepiece_FOUND)
+          set(SENTENCEPIECE_TARGET PkgConfig::sentencepiece)
+        else()
+          message(FATAL_ERROR "sentencepiece not found. Please install it via vcpkg.")
+        endif()
+      else()
+        message(FATAL_ERROR "sentencepiece not found. Please install it via vcpkg.")
+      endif()
+    endif()
+  endif()
+
   if(SENTENCEPIECE_TARGET)
+    find_package(absl CONFIG QUIET)
     set(EXT_LIBS ${EXT_LIBS} ${SENTENCEPIECE_TARGET})
+    set(EXT_LIBS ${EXT_LIBS} 
+         absl::strings
+         absl::str_format
+         absl::flags
+         absl::flags_parse
+         absl::hash
+         absl::log
+         absl::base)
+
     set(USE_EXTERNAL_SENTENCEPIECE ON CACHE BOOL "Use external sentencepiece via find_package" FORCE)
   else()
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -D_USE_INTERNAL_STRING_VIEW")

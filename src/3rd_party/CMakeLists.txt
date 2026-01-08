@@ -2,6 +2,7 @@
 include_directories(.)
 
 add_subdirectory(./yaml-cpp)
+include_directories(./spdlog)
 if(NOT USE_WASM_COMPATIBLE_SOURCE)
   add_subdirectory(./zlib)
 
