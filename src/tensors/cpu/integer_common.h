@@ -8,7 +8,7 @@
 #include "graph/node_operators_unary.h"
 #include "common/io_item.h"
 #ifdef USE_INTGEMM
-#include "3rd_party/intgemm/intgemm/intgemm.h"
+#include <intgemm/intgemm.h>
 #else // USE_INTGEMM
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wcomment"
