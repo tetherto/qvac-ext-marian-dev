@@ -33,6 +33,11 @@ env:
   gcc_version: 8
 
 jobs:
+  runner_names:
+    permissions:
+      contents: read
+    uses: ./.github/workflows/reusable-runner-names.yml
+
   ######################################################################
   build-release-ubuntu:
     strategy:
@@ -125,6 +130,7 @@ jobs:
 
   ######################################################################
   build-release-windows:
+    needs: runner_names
     strategy:
       matrix:
         include:
@@ -139,7 +145,7 @@ jobs:
             fbgemm: false
             cuda: true
 
-    runs-on: windows-2019
+    runs-on: ${{ needs.runner_names.outputs.windows_2019 }}
     name: ${{ matrix.name }}
 
     steps:
