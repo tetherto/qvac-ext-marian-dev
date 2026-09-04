@@ -7,7 +7,13 @@ on:
     branches: [ "**" ]
 
 jobs:
+  runner_names:
+    permissions:
+      contents: read
+    uses: ./.github/workflows/reusable-runner-names.yml
+
   build-ubuntu:
+    needs: runner_names
     strategy:
       matrix:
         include:
@@ -69,7 +75,7 @@ jobs:
             unit_tests: true
             examples: false
 
-    runs-on: ${{ matrix.os }}
+    runs-on: ${{ matrix.os == 'ubuntu-20.04' && needs.runner_names.outputs.ubuntu_2004 || needs.runner_names.outputs.ubuntu_2204 }}
     name: ${{ matrix.name }}
 
     steps:
@@ -139,3 +145,4 @@ jobs:
         ./marian-decoder --version
         ./marian-scorer --version
         ./spm_encode --version
+

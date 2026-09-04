@@ -10,7 +10,13 @@ env:
   MKL_URL: "https://data.statmt.org/romang/marian-regression-tests/ci/mkl-2020.1-windows-static.zip"
 
 jobs:
+  runner_names:
+    permissions:
+      contents: read
+    uses: ./.github/workflows/reusable-runner-names.yml
+
   build-windows:
+    needs: runner_names
     strategy:
       matrix:
         include:
@@ -23,7 +29,7 @@ jobs:
             cuda: "10.2"
             gpu: true
 
-    runs-on: windows-2019
+    runs-on: ${{ needs.runner_names.outputs.windows_2019 }}
     name: ${{ matrix.name }}
 
     steps:
@@ -126,3 +132,4 @@ jobs:
         .\marian-scorer.exe --version
         dir *.exe
       shell: cmd
+
