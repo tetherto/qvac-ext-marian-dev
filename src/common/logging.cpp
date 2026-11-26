@@ -18,6 +18,10 @@ namespace marian {
   static bool throwExceptionOnAbort = false;
   bool getThrowExceptionOnAbort() { return throwExceptionOnAbort; }
   void setThrowExceptionOnAbort(bool doThrowExceptionOnAbort) { throwExceptionOnAbort = doThrowExceptionOnAbort; };
+
+  static bool installErrorHandlers = false;
+  bool getInstallErrorHandlers() { return installErrorHandlers; }
+  void setInstallErrorHandlers(bool doInstallErrorHandlers) { installErrorHandlers = doInstallErrorHandlers; }
 }
 
 std::shared_ptr<spdlog::logger> createStderrLogger(const std::string& name,
@@ -114,7 +118,10 @@ std::vector<Logger> createLoggers(const marian::Config* config) {
     tzset();
   }
 
-  setErrorHandlers();
+  // Process-wide handlers would replace the host's own when Marian is embedded as a
+  // library, so only the command-line tools install them.
+  if(marian::getInstallErrorHandlers())
+    setErrorHandlers();
   return loggers;
 }
 
