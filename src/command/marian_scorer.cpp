@@ -6,6 +6,9 @@
 
 int main(int argc, char** argv) {
   using namespace marian;
+  // The command-line tools own their process, so they install Marian's
+  // std::terminate and signal handlers (see createLoggers()).
+  setInstallErrorHandlers(true);
 
   auto options = parseOptions(argc, argv, cli::mode::scoring);
 
