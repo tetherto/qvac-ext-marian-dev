@@ -35,6 +35,15 @@ namespace marian {
 
   // Set the state of throwExceptionOnAbort (see logging.cpp)
   void setThrowExceptionOnAbort(bool);
+
+  // Whether createLoggers() installs process-wide error handlers: std::set_terminate
+  // and, on Unix, SIGSEGV/SIGFPE handlers that abort. By default false, so a process
+  // that embeds Marian as a library keeps its own handlers; a JVM, for one, handles
+  // SIGSEGV itself. The Marian command-line tools set it to true.
+  bool getInstallErrorHandlers();
+
+  // Set the state of installErrorHandlers (see logging.cpp)
+  void setInstallErrorHandlers(bool);
 }
 
 /**

@@ -39,6 +39,9 @@
 
 int main(int argc, char** argv) {
   using namespace marian;
+  // The command-line tools own their process, so they install Marian's
+  // std::terminate and signal handlers (see createLoggers()).
+  setInstallErrorHandlers(true);
 
   if(argc > 1 && argv[1][0] != '-') {
     std::string cmd = argv[1];

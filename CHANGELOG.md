@@ -7,6 +7,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 
 ## [Unreleased]
+- createLoggers() no longer installs std::set_terminate and the Unix SIGSEGV/SIGFPE handlers unless `marian::setInstallErrorHandlers(true)` is called first. The command-line tools call it; a process that embeds Marian as a library keeps its own handlers, so a JVM's SIGSEGV is no longer turned into a Marian abort.
 - Disable the undocumented `mmap()` codepath. It is now used for loading models from binary byte arrays.
 - Preload model to Item vector before creating scorers
 
